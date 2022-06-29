@@ -1,0 +1,11 @@
+{
+    "name": "freefall-sales-dashboard",
+    "source": "src/index.html",
+    "scripts": {
+      "start": "parcel",
+      "build": "parcel build --dist-dir public"
+    },
+    "devDependencies": {
+      "parcel": "latest"
+    }
+  }

@@ -1,18 +1,20 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.8.2/firebase-app.js';
-import { getFirestore, ref, set, FieldValue } from 'https://www.gstatic.com/firebasejs/9.8.2/firebase-firestore.js';
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/9.8.2/firebase-auth.js';
-const faker = require('faker');
-const functions = require('firebase-functions');
 
-var signedIn = document.getElementById("signedIn");
-var signedOut = document.getElementById("signedOut");
-var userDetails = document.getElementById("userDetails");
-var logIn = document.getElementById("logIn");
-var logOut = document.getElementById("logOut");
-var newSale = document.getElementById("newSale");
+var showOldSales = document.getElementById("testButton");
 
 var stats = document.getElementsByClassName("stats")[0];
 var orders = document.getElementsByClassName("orders")[0];
+
+import {WooCommerceRestAPI} from "../node_modules/@woocommerce/woocommerce-rest-api/index.js";
+
+const WooCommerce = new WooCommerceRestAPI({
+    url: 'https://ffdrc.com/',
+    consumerKey: 'ck_7a4ef3dfb8ede54346f840e10afcbcbdcf08e1d9',
+    consumerSecret: 'cs_88e06874eec5d48b8a76acc986b312a2a36a0e08',
+    wpAPI: true,
+    version: 'wc/v3'
+  });
 
 const firebaseConfig = {
     apiKey: "AIzaSyAFIRcu2EUkvX1jReVrAl5CpP-aGGbnmOY",
@@ -25,70 +27,35 @@ const firebaseConfig = {
     measurementId: "G-96D5YKF11R"
 };
 
+const app = firebase.app();
+const db = firebase.firestore();
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-logIn.onclick = () => signInWithPopup(auth, provider);
-logOut.onclick = () => signOut(auth);
-newSale.onclick = () => add();
+showOldSales.onClick = () => getOldSales();
 
-document.addEventListener("DOMContentLoaded", event => {
-    const app = firebase.app();
-    const db = firebase.firestore();
-    const myPost
-})
+// onAuthStateChanged(auth, (user) => {
+//     if (user) {
+//         signedIn.hidden = false;
+//         signedOut.hidden = true;
+//         userDetails.innerHTML = `Hello ${user.displayName}!`;
+//     } else {
+//         signedIn.hidden = true;
+//         signedOut.hidden = false;
+//         userDetails.innerHTML = ``;
+//     }
+// })
 
-exports.newOrder = functions.https.onRequest((request, response) => {
-    const data = request.body;
-    console.log(data);
-});
+console.log("test");
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        signedIn.hidden = false;
-        signedOut.hidden = true;
-        userDetails.innerHTML = `Hello ${user.displayName}!`;
-    } else {
-        signedIn.hidden = true;
-        signedOut.hidden = false;
-        userDetails.innerHTML = ``;
-    }
-})
-
-function writeSalesData(salesId, products, userId, date) {
-    const reference = ref(db, 'sales/' + salesId);
-
-    set(reference, {
-        purchased: products,
-        user: userId,
-        time: date
-    });
+function getOldSales() {
+    console.log("test");
+    download(JSON.parse(WooCommerce.get('orders').body), "test.json", "text/plain")
 }
 
-function add() {
-    salesRef = db.collection('sales');
-
-    const { serverTimestamp } = FieldValue;
-
-    salesRef.add({
-        uid: user.uid,
-        sid: faker.random.uuid(),
-        total: faker.random.number(),
-        date: serverTimestamp
-    });
-
-    unsubscribe = salesRef.where('uid', '==', user.uid).onSnapshot(querySnapshot => {
-        const items = querySnapshot.docs.map(doc => {
-            return `<li>${ doc.data().name }</li>`
-        });
-        
-    });
+function download(content, fileName, contentType) {
+    const a = document.createElement("a");
+    const file = new Blob([content], { type: contentType });
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
 }
-
-const stats = {
-    width: "50%"
-}
-
-const orders = {
-    width: "50%"
-}
-

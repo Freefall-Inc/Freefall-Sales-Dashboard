@@ -2,10 +2,15 @@
     "name": "freefall-sales-dashboard",
     "source": "src/index.html",
     "scripts": {
-      "start": "parcel",
-      "build": "parcel build --dist-dir public"
+        "start": "parcel",
+        "build": "parcel build --dist-dir public"
     },
     "devDependencies": {
-      "parcel": "latest"
+        "parcel": "latest",
+        "prettier": "^2.7.1"
+    },
+    "dependencies": {
+        "firebase": "^9.8.4",
+        "firebaseui": "^6.0.1"
     }
-  }
+}

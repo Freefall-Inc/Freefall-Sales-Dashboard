@@ -1,0 +1,83 @@
+body {
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  position: absolute;
+}
+
+.dashboard {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+}
+
+.stats {
+  height: 100%;
+  width: 50%;
+  display: block;
+}
+
+.orders {
+  height: 100%;
+  width: 50%;
+  display: block;
+  overflow-y: scroll;
+}
+
+.stats label {
+  width: 100%;
+  font-size: 3vmax;
+}
+
+.stats div {
+  box-sizing: border-box;
+  height: 25%;
+  width: 100%;
+  text-align: center;
+  border-top: 5px solid gray;
+  border-right: 5px solid #789;
+  flex-wrap: wrap;
+  align-items: center;
+  display: flex;
+}
+
+.order {
+  box-sizing: border-box;
+  border-top: 5px solid #add8e6;
+  flex-wrap: wrap;
+  align-items: center;
+  display: flex;
+}
+
+.order label {
+  margin-left: 20px;
+  font-size: 1.5vmax;
+}
+
+#date {
+  width: fit-content;
+  margin-right: 10px;
+  font-size: 2vmax;
+}
+
+#name {
+  width: 100%;
+  font-size: 2.5vmax;
+  display: block;
+}
+
+#item {
+  width: 100%;
+  display: block;
+}
+
+#orderTotal {
+  width: fit-content;
+  font-size: 2vmax;
+}
+
+/*# sourceMappingURL=index.61d3354a.css.map */

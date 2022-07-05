@@ -23,4 +23,9 @@ export const newOrder = functions.https.onRequest((request, response) => {
     items: body.line_items,
   };
   db.collection("orders").add(data);
+  response.status(200).send("");
 });
+
+export const calculateTotals = functions.firestore.document("orders").onCreate((snapshot, context) => {
+  console.log(snapshot);
+})

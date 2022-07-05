@@ -1,15 +1,37 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8"/>
-    <title>My First Parcel App</title>
 
-    <script src="./index.ts" type="module" />
-  </head>
-  <body>
-    <h1>Hello, World!</h1>
+<head>
+  <meta charset="utf-8" />
+  <title>Freefall Sales Dashboard</title>
+  <link rel="stylesheet" href="index.css">
 
-    <div id="firebaseui-auth-container"></div>
-    <div id="loader">Loading...</div>
-  </body>
+  <script src="./index.ts" type="module" />
+</head>
+
+<body>
+  <div id="firebaseui-auth-container"></div>
+  <div class="dashboard">
+    <div class="stats">
+      <div class="all-sales">
+        <label>All-time Sales</label>
+        <label class="amount" id="total"></label>
+      </div>
+      <div class="30-day-sales">
+        <label>Last 30 Day Sales</label>
+        <label class="amount" id="total30"></label>
+      </div>
+      <div class="7-day-sales">
+        <label>Last 7 Day Sales</label>
+        <label class="amount" id="total7"></label>
+      </div>
+      <div class="top-selling">
+        <label>Top Selling Product In Last 30 Days</label>
+        <label id="product30"></label>
+      </div>
+    </div>
+    <div class="orders"></div>
+  </div>
+</body>
+
 </html>

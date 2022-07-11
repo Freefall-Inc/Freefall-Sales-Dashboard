@@ -581,31 +581,41 @@ const dashboard = document.getElementsByClassName("dashboard")[0];
 });
 const threshold30Day = (0, _dayjsDefault.default)().subtract(30, "days").format("YYYY-MM-DD");
 const orders = document.getElementsByClassName("orders")[0];
-let q = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "asc"), (0, _firestore.where)("date", ">", threshold30Day));
-const unsub = (0, _firestore.onSnapshot)(q, (records)=>{
+let orderQuery = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "asc"), (0, _firestore.where)("date", ">", threshold30Day));
+let totalsQuery = (0, _firestore.query)((0, _firestore.collection)(db, "stats"));
+(0, _firestore.onSnapshot)(orderQuery, (records)=>{
     for(let i = 0; i < records.docs.length; i++)addOrderToDashboard(records.docs[i].data());
+    orderQuery;
+});
+(0, _firestore.onSnapshot)(totalsQuery, ()=>{
     updateTotals();
-    q;
 });
 function addOrderToDashboard(recordData) {
     const order = document.createElement("div");
     order.className = "order";
+    const orderDetails = document.createElement("div");
+    orderDetails.className = "orderDetails";
+    const orderItems = document.createElement("div");
+    orderItems.className = "orderItems";
     const customerName = document.createElement("label");
     customerName.id = "name";
     const dateBought = document.createElement("label");
     dateBought.id = "date";
     const orderTotal = document.createElement("label");
     orderTotal.id = "orderTotal";
+    orderTotal.className = "amount";
     customerName.innerText = recordData.customer.f_name + " " + recordData.customer.l_name;
-    dateBought.innerText = (0, _dayjsDefault.default)(recordData.date).format("MM/DD/YYYY");
+    dateBought.innerText = (0, _dayjsDefault.default)(recordData.date).format("MM/DD/YYYY h:mmA");
     orderTotal.innerText = "$" + recordData.total.toLocaleString("en-US");
-    order.append(customerName, dateBought, orderTotal);
+    orderDetails.append(customerName, dateBought, orderTotal);
     for(let j = 0; j < recordData.items.length; j++){
         const item = document.createElement("label");
         item.id = "item";
         item.innerText = recordData.items[j].name;
-        order.appendChild(item);
+        orderItems.appendChild(item);
     }
+    order.appendChild(orderDetails);
+    order.appendChild(orderItems);
     orders.insertBefore(order, orders.firstChild);
 }
 function updateTotals() {

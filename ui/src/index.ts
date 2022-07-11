@@ -53,39 +53,50 @@ firebase.auth().onAuthStateChanged((user) => {
 
 const threshold30Day = dayjs().subtract(30, "days").format("YYYY-MM-DD");
 const orders = document.getElementsByClassName("orders")[0];
-let q = query(collection(db, "orders"), orderBy("date", "asc"), where("date", ">", threshold30Day))
+let orderQuery = query(collection(db, "orders"), orderBy("date", "asc"), where("date", ">", threshold30Day))
+let totalsQuery = query(collection(db, "stats"));
 
-const unsub = onSnapshot(q, (records) => {
+onSnapshot(orderQuery, (records) => {
     for (let i = 0; i < records.docs.length; i++) {
         addOrderToDashboard(records.docs[i].data());
     }
+    orderQuery = orderQuery;
+});
+
+onSnapshot(totalsQuery, () => {
     updateTotals();
-    q = q;
 })
 
 function addOrderToDashboard(recordData) {
 
     const order = document.createElement("div");
     order.className = "order";
+    const orderDetails = document.createElement("div");
+    orderDetails.className = "orderDetails";
+    const orderItems = document.createElement("div");
+    orderItems.className = "orderItems";
     const customerName = document.createElement("label");
     customerName.id = "name";
     const dateBought = document.createElement("label");
-    dateBought.id = "date"
+    dateBought.id = "date";
     const orderTotal = document.createElement("label");
-    orderTotal.id = "orderTotal"
+    orderTotal.id = "orderTotal";
+    orderTotal.className = "amount";
 
     customerName.innerText = recordData.customer.f_name + " " + recordData.customer.l_name;
-    dateBought.innerText = dayjs(recordData.date).format('MM/DD/YYYY');
+    dateBought.innerText = dayjs(recordData.date).format('MM/DD/YYYY h:mmA');
     orderTotal.innerText = "$" + recordData.total.toLocaleString('en-US');
 
-    order.append(customerName, dateBought, orderTotal);
+    orderDetails.append(customerName, dateBought, orderTotal);
 
     for (let j = 0; j < recordData.items.length; j++) {
         const item = document.createElement("label");
         item.id = "item";
         item.innerText = recordData.items[j].name;
-        order.appendChild(item);
+        orderItems.appendChild(item);
     }
+    order.appendChild(orderDetails);
+    order.appendChild(orderItems);
     orders.insertBefore(order, orders.firstChild);
 }
 

@@ -34,6 +34,10 @@ body {
   font-size: 3vmax;
 }
 
+.amount {
+  font-weight: 500;
+}
+
 .stats div {
   box-sizing: border-box;
   height: 25%;
@@ -49,25 +53,37 @@ body {
 .order {
   box-sizing: border-box;
   border-top: 5px solid #add8e6;
-  flex-wrap: wrap;
-  align-items: center;
   display: flex;
 }
 
 .order label {
-  margin-left: 20px;
-  font-size: 1.5vmax;
+  font-size: 2vmax;
+}
+
+.orderItems {
+  height: fit-content;
+  width: 60%;
+  flex-wrap: wrap;
+  margin-left: 10px;
+  display: flex;
+}
+
+.orderDetails {
+  width: 40%;
+  flex-wrap: wrap;
+  align-content: center;
+  margin-left: 10px;
+  display: flex;
 }
 
 #date {
-  width: fit-content;
-  margin-right: 10px;
-  font-size: 2vmax;
+  width: 100%;
+  font-size: 2.5vmax;
 }
 
 #name {
   width: 100%;
-  font-size: 2.5vmax;
+  font-size: 3vmax;
   display: block;
 }
 
@@ -77,8 +93,8 @@ body {
 }
 
 #orderTotal {
-  width: fit-content;
-  font-size: 2vmax;
+  width: 100%;
+  font-size: 2.5vmax;
 }
 
 .mdl-button {

@@ -561,71 +561,31 @@ const firebaseConfig = {
 };
 const app = (0, _appDefault.default).initializeApp(firebaseConfig);
 const db = (0, _firestore.getFirestore)(app);
-var ui = new _firebaseui.auth.AuthUI((0, _appDefault.default).auth());
+const ui = new _firebaseui.auth.AuthUI((0, _appDefault.default).auth());
+const allowedEmailDomain = "ffdrc.com";
+const dashboard = document.getElementsByClassName("dashboard")[0];
 (0, _appDefault.default).auth().onAuthStateChanged((user)=>{
-    if (user) ui.delete();
-    else ui.start("#firebaseui-auth-container", {
-        signInOptions: [
-            (0, _appDefault.default).auth.EmailAuthProvider.PROVIDER_ID,
-            (0, _appDefault.default).auth.GoogleAuthProvider.PROVIDER_ID, 
-        ],
-        signInSuccessUrl: "/"
-    });
-});
-let salesTotalAll = 0;
-let salesTotal30 = 0;
-let salesTotal7 = 0;
-let productsInLast30 = Array();
-const orders = document.getElementsByClassName("orders")[0];
-let d = new Date();
-// getDocs(collection(db, "orders")).then((querySnapshot) => {
-//     for(let i = 0; i < querySnapshot.docs.length; i++) {
-//         salesTotalAll += parseFloat(querySnapshot.docs[i].data().total);
-//         const timeBetweenDates = Math.abs(new Date(querySnapshot.docs[i].data().date).getTime() - d.getTime());
-//         const daysBetweenDates = timeBetweenDates / (24 * 60 * 60 * 1000);
-//         if (daysBetweenDates < 30) {
-//             salesTotal30 += parseFloat(querySnapshot.docs[i].data().total);
-//             for (let j = 0; j < querySnapshot.docs[i].data().items.length; j++) {
-//                 productsInLast30.push(querySnapshot.docs[i].data().items[j].name);
-//             }
-//         }
-//         if (daysBetweenDates < 7) {
-//             salesTotal7 += parseFloat(querySnapshot.docs[i].data().total);
-//         }
-//     }
-//     if (total != undefined) {
-//         total.innerText = "$" + Math.round(salesTotalAll).toLocaleString('en-US');
-//     }
-//     if (total30 != undefined) {
-//         total30.innerText = "$" + Math.round(salesTotal30).toLocaleString('en-US');
-//     }
-//     if (total7 != undefined) {
-//         total7.innerText = "$" + Math.round(salesTotal7).toLocaleString('en-US');
-//     }
-//     if (product30 != undefined) {
-//         const bestSeller = mostFrequent(productsInLast30, productsInLast30.length);
-//         let count = 0;
-//         for (let i = 0; i < productsInLast30.length; i++) {
-//             if (productsInLast30[i] === bestSeller) {
-//                 count++;
-//             }
-//         }
-//         product30.innerText = bestSeller + " (" + count.toString() + ")";
-//     }
-// });
-const q = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "desc"), (0, _firestore.limit)(10));
-// getDocs(q).then((querySnapshot) => {
-//     for (let i = 0; i < querySnapshot.docs.length; i++) {
-//         addOrderToDashboard(querySnapshot.docs[i].data());
-//     }
-// })
-const unsub = (0, _firestore.onSnapshot)(q, (records)=>{
-    for(let i = 0; i < records.docs.length; i++){
-        if ((0, _dayjsDefault.default)(d).diff(records.docs[i].data().date) > 0) continue;
-        addOrderToDashboard(records.docs[i].data());
+    if (user && user.email?.split("@")[1] === allowedEmailDomain && user.emailVerified) {
+        ui && ui.delete();
+        dashboard.style.display = "inline-flex";
+    } else {
+        dashboard.style.display = "none";
+        ui.start("#firebaseui-auth-container", {
+            signInOptions: [
+                (0, _appDefault.default).auth.EmailAuthProvider.PROVIDER_ID,
+                (0, _appDefault.default).auth.GoogleAuthProvider.PROVIDER_ID, 
+            ],
+            signInSuccessUrl: "/"
+        });
     }
+});
+const threshold30Day = (0, _dayjsDefault.default)().subtract(30, "days").format("YYYY-MM-DD");
+const orders = document.getElementsByClassName("orders")[0];
+let q = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "asc"), (0, _firestore.where)("date", ">", threshold30Day));
+const unsub = (0, _firestore.onSnapshot)(q, (records)=>{
+    for(let i = 0; i < records.docs.length; i++)addOrderToDashboard(records.docs[i].data());
     updateTotals();
-    d = new Date();
+    q;
 });
 function addOrderToDashboard(recordData) {
     const order = document.createElement("div");
@@ -660,16 +620,6 @@ function updateTotals() {
         product30 && (product30.innerHTML = snapshot.data()?.product30Day);
     });
 }
-const now = new Date();
-const threshold30Day = (0, _dayjsDefault.default)(new Date(now.setDate(now.getDate() - 7))).format("YYYY-MM-DD");
-console.log(threshold30Day);
-const q2 = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "desc"), (0, _firestore.where)("date", ">", threshold30Day));
-const getAndCalculateData = async ()=>{
-    const docs = await (await (0, _firestore.getDocs)(q2)).docs.map((i)=>i.data());
-    const data30DaySum = docs.reduce((out, doc)=>out + parseFloat(doc.total), 0);
-    console.log(data30DaySum);
-};
-getAndCalculateData();
 
 },{"firebaseui":"1OWAk","firebase/compat/app":"2iVaZ","firebaseui/dist/firebaseui.css":"8C05G","dayjs":"NJZFB","firebase/firestore":"cJafS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@woocommerce/woocommerce-rest-api":"a800i"}],"1OWAk":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -52068,8 +52018,8 @@ function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 "use strict";
-var process = require("process");
 var global = arguments[3];
+var process = require("process");
 module.exports = Readable;
 /*<replacement>*/ var Duplex;
 /*</replacement>*/ Readable.ReadableState = ReadableState;

@@ -33,6 +33,29 @@ export const newOrder = functions.https.onRequest((request, response) => {
   response.status(200).send("");
 });
 
+export const updateOrder = functions.https.onRequest((request, response) => {
+  const body: WebhookRequestBody = request.body;
+  // Delete the order from the database if it gets refunded or if it fails
+  const order = db.collection("orders").where("orderId", "==", body.id);
+  if (body.status == "refunded" || body.status == "failed") {
+    order.get().then((snap) => {
+      snap.forEach((doc) => {
+        db.collection("orders").doc(doc.id).delete();
+      });
+    });
+  // update the status of an order if it goes from processing to completed
+  } else if (body.status == "completed") {
+    order.get().then((snap) => {
+      snap.forEach((doc) => {
+        db.collection("orders").doc(doc.id).update({
+          "status": body.status,
+        });
+      });
+    });
+  }
+  response.status(200).send("");
+});
+
 interface StatsDoc {
   all?: number,
   data30Day?: number,
@@ -45,32 +68,59 @@ export const calculateTotals = functions.firestore.document("/orders/{orderId}")
       const orderData = snapshot.data() as WebhookRequestBody;
 
       const process = async () => {
+        // get the current sales stats
         const statsDoc = (await db.collection("stats").doc("totals").get())
             .data() as StatsDoc;
-        const all = (statsDoc.all || 0) + parseFloat(orderData.total);
 
-        const now = new Date();
-        const threshold30Day =
-        dayjs(new Date(now.setDate(now.getDate() - 30))).format("YYYY-MM-DD");
-        const threshold7Day =
-        dayjs(new Date(now.setDate(now.getDate() - 7))).format("YYYY-MM-DD");
-        let product30Day = "";
-        const itemsInLast30:string[] = [];
+        // get the current order total
+        const orderTotal = parseFloat(orderData.total);
 
+        // update sales totals based on current order total
+        const all = (statsDoc.all || 0) + orderTotal;
+        const data30DaySum = (statsDoc.data30Day || 0) + orderTotal;
+        const data7DaySum = (statsDoc.data7Day || 0) + orderTotal;
+
+        // update stats in database
+        db.collection("stats").doc("totals").set({
+          all,
+          data30Day: data30DaySum,
+          data7Day: data7DaySum,
+          product30Day: statsDoc.product30Day,
+        });
+      };
+      process();
+      return null;
+    });
+
+export const updateTotals = functions.pubsub.schedule("0 0 * * *")
+    .timeZone("America/Phoenix").onRun((context) => {
+      // Set-up variables
+      const threshold30Day =
+      dayjs().subtract(30, "days").format("YYYY-MM-DD");
+      const threshold7Day =
+      dayjs().subtract(7, "days").format("YYYY-MM-DD");
+      let product30Day = "";
+      const itemsInLast30:string[] = [];
+
+      const process = async () => {
+        const statsDoc = (await db.collection("stats").doc("totals").get())
+            .data() as StatsDoc;
+
+        // Get the amount of sales from the last 30 days
         const query30Day = await db.collection("orders")
             .orderBy("date", "desc").where("date", ">", threshold30Day).get();
         const docs30Day = await (query30Day).docs.map((i) => i.data());
         const data30DaySum =
             docs30Day.reduce((out, doc) => out + parseFloat(doc.total), 0);
 
+        // Get the amount of sales from the last 7 days
         const query7Day = await db.collection("orders")
             .orderBy("date", "desc").where("date", ">", threshold7Day).get();
         const docs7Day = await (query7Day).docs.map((i) => i.data());
         const data7DaySum =
             docs7Day.reduce((out, doc) => out + parseFloat(doc.total), 0);
 
-        functions.logger.log(docs7Day, {structuredData: true});
-
+        // Get top selling product from the last 30 days
         docs30Day.forEach((doc) => {
           for (let i = 0; i < doc.items.length; i++) {
             itemsInLast30.push(doc.items[i].name);
@@ -79,16 +129,16 @@ export const calculateTotals = functions.firestore.document("/orders/{orderId}")
         product30Day =
           String(mostFrequent(itemsInLast30, itemsInLast30.length));
 
+        // Add all information to firebase
         db.collection("stats").doc("totals").set({
-          all,
+          all: statsDoc.all,
           data30Day: data30DaySum,
           data7Day: data7DaySum,
           product30Day,
         });
       };
-
       process();
-      return true;
+      return null;
     });
 
 // Get total sales

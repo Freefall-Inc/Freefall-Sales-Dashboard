@@ -29,13 +29,18 @@ const firebaseConfig = {
 const app = firebase.initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-var ui = new firebaseui.auth.AuthUI(firebase.auth());
+const ui = new firebaseui.auth.AuthUI(firebase.auth());
+const allowedEmailDomain = "ffdrc.com"
+
+const dashboard = document.getElementsByClassName("dashboard")[0] as HTMLElement;
 
 firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        ui.delete();
+    if (user && user.email?.split("@")[1] === allowedEmailDomain && user.emailVerified) {
+        ui ? ui.delete() : null;
+        dashboard.style.display = "inline-flex";
     }
     else {
+        dashboard.style.display = "none";
         ui.start('#firebaseui-auth-container', {
             signInOptions: [
                 firebase.auth.EmailAuthProvider.PROVIDER_ID,
@@ -46,66 +51,16 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 })
 
-let salesTotalAll = 0;
-let salesTotal30 = 0;
-let salesTotal7 = 0;
-let productsInLast30 = Array();
+const threshold30Day = dayjs().subtract(30, "days").format("YYYY-MM-DD");
 const orders = document.getElementsByClassName("orders")[0];
-let d = new Date();
-
-// getDocs(collection(db, "orders")).then((querySnapshot) => {
-//     for(let i = 0; i < querySnapshot.docs.length; i++) {
-//         salesTotalAll += parseFloat(querySnapshot.docs[i].data().total);
-//         const timeBetweenDates = Math.abs(new Date(querySnapshot.docs[i].data().date).getTime() - d.getTime());
-//         const daysBetweenDates = timeBetweenDates / (24 * 60 * 60 * 1000);
-//         if (daysBetweenDates < 30) {
-//             salesTotal30 += parseFloat(querySnapshot.docs[i].data().total);
-//             for (let j = 0; j < querySnapshot.docs[i].data().items.length; j++) {
-//                 productsInLast30.push(querySnapshot.docs[i].data().items[j].name);
-//             }
-//         }
-//         if (daysBetweenDates < 7) {
-//             salesTotal7 += parseFloat(querySnapshot.docs[i].data().total);
-//         }
-//     }
-//     if (total != undefined) {
-//         total.innerText = "$" + Math.round(salesTotalAll).toLocaleString('en-US');
-//     }
-//     if (total30 != undefined) {
-//         total30.innerText = "$" + Math.round(salesTotal30).toLocaleString('en-US');
-//     }
-//     if (total7 != undefined) {
-//         total7.innerText = "$" + Math.round(salesTotal7).toLocaleString('en-US');
-//     }
-//     if (product30 != undefined) {
-//         const bestSeller = mostFrequent(productsInLast30, productsInLast30.length);
-//         let count = 0;
-//         for (let i = 0; i < productsInLast30.length; i++) {
-//             if (productsInLast30[i] === bestSeller) {
-//                 count++;
-//             }
-//         }
-//         product30.innerText = bestSeller + " (" + count.toString() + ")";
-//     }
-// });
-
-const q = query(collection(db, "orders"), orderBy("date", "desc"), limit(10))
-// getDocs(q).then((querySnapshot) => {
-
-//     for (let i = 0; i < querySnapshot.docs.length; i++) {
-//         addOrderToDashboard(querySnapshot.docs[i].data());
-//     }
-// })
+let q = query(collection(db, "orders"), orderBy("date", "asc"), where("date", ">", threshold30Day))
 
 const unsub = onSnapshot(q, (records) => {
     for (let i = 0; i < records.docs.length; i++) {
-        if (dayjs(d).diff(records.docs[i].data().date) > 0) {
-            continue;
-        }
         addOrderToDashboard(records.docs[i].data());
     }
     updateTotals();
-    d = new Date();
+    q = q;
 })
 
 function addOrderToDashboard(recordData) {
@@ -141,24 +96,9 @@ function updateTotals() {
     const product30 = document.getElementById("product30");
 
     getDoc(doc(db, "stats", "totals")).then((snapshot) => {
-        total ? total.innerHTML = "$" + snapshot.data()?.all.toLocaleString('en-US') : 0;
-        total7 ? total7.innerHTML = "$" + snapshot.data()?.data7Day.toLocaleString('en-US') : 0;
-        total30 ? total30.innerHTML = "$" + snapshot.data()?.data30Day.toLocaleString('en-US') : 0;
-        product30 ? product30.innerHTML = snapshot.data()?.product30Day : 0;
+        total ? total.innerHTML = "$" + snapshot.data()?.all.toLocaleString('en-US') : null;
+        total7 ? total7.innerHTML = "$" + snapshot.data()?.data7Day.toLocaleString('en-US') : null;
+        total30 ? total30.innerHTML = "$" + snapshot.data()?.data30Day.toLocaleString('en-US') : null;
+        product30 ? product30.innerHTML = snapshot.data()?.product30Day : null;
     })
 }
-
-const now = new Date();
-
-const threshold30Day = dayjs(new Date(now.setDate(now.getDate() - 7))).format("YYYY-MM-DD");
-console.log(threshold30Day);
-
-const q2 = query(collection(db, "orders"), orderBy("date", "desc"), where("date", ">", threshold30Day));
-
-const getAndCalculateData = async () => {
- const docs = await (await getDocs(q2)).docs.map(i => i.data())
- const data30DaySum = docs.reduce((out, doc) => out + parseFloat(doc.total), 0)
- console.log(data30DaySum);
-}
-
-getAndCalculateData()

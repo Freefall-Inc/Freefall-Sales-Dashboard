@@ -611,7 +611,7 @@ function addOrderToDashboard(recordData) {
     for(let j = 0; j < recordData.items.length; j++){
         const item = document.createElement("label");
         item.id = "item";
-        item.innerText = recordData.items[j].name;
+        item.innerText = j + 1 + ".) " + recordData.items[j].name + (recordData.items[j].quantity > 1 ? " (x" + recordData.items[j].quantity + ")" : "");
         orderItems.appendChild(item);
     }
     order.appendChild(orderDetails);

@@ -29,6 +29,10 @@ body {
   overflow-y: scroll;
 }
 
+.orders::-webkit-scrollbar {
+  width: 0 !important;
+}
+
 .stats label {
   width: 100%;
   font-size: 3vmax;

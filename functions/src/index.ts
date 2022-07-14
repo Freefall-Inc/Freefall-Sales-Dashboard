@@ -123,7 +123,9 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
         // Get top selling product from the last 30 days
         docs30Day.forEach((doc) => {
           for (let i = 0; i < doc.items.length; i++) {
-            itemsInLast30.push(doc.items[i].name);
+            for (let j = 0; j < doc.items[i].quantity; j++) {
+              itemsInLast30.push(doc.items[i].name);
+            }
           }
         });
         product30Day =

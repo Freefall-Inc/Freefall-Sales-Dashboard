@@ -60,7 +60,7 @@ body {
 }
 
 .order label {
-    font-size: 2vmax;
+    font-size: 2.1vmax;
 }
 
 .orderItems {
@@ -98,4 +98,8 @@ body {
 #orderTotal {
     width: 100%;
     font-size: 2.5vmax;
+}
+
+#product30 {
+    font-weight: 500;
 }

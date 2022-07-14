@@ -579,13 +579,13 @@ const dashboard = document.getElementsByClassName("dashboard")[0];
         });
     }
 });
-const threshold30Day = (0, _dayjsDefault.default)().subtract(30, "days").format("YYYY-MM-DD");
+let threshold30Day = (0, _dayjsDefault.default)().subtract(30, "days").format("YYYY-MM-DD");
 const orders = document.getElementsByClassName("orders")[0];
-let orderQuery = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "asc"), (0, _firestore.where)("date", ">", threshold30Day));
-let totalsQuery = (0, _firestore.query)((0, _firestore.collection)(db, "stats"));
+const orderQuery = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "asc"), (0, _firestore.where)("date", ">", threshold30Day));
+const totalsQuery = (0, _firestore.query)((0, _firestore.collection)(db, "stats"));
 (0, _firestore.onSnapshot)(orderQuery, (records)=>{
-    for(let i = 0; i < records.docs.length; i++)addOrderToDashboard(records.docs[i].data());
-    orderQuery;
+    for(let i = 0; i < records.docChanges().length; i++)if (records.docChanges()[i].type === "added") addOrderToDashboard(records.docChanges()[i].doc.data());
+    threshold30Day = (0, _dayjsDefault.default)().subtract(30, "days").format("YYYY-MM-DD");
 });
 (0, _firestore.onSnapshot)(totalsQuery, ()=>{
     updateTotals();

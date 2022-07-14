@@ -51,16 +51,18 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 })
 
-const threshold30Day = dayjs().subtract(30, "days").format("YYYY-MM-DD");
+let threshold30Day = dayjs().subtract(30, "days").format("YYYY-MM-DD");
 const orders = document.getElementsByClassName("orders")[0];
-let orderQuery = query(collection(db, "orders"), orderBy("date", "asc"), where("date", ">", threshold30Day))
-let totalsQuery = query(collection(db, "stats"));
+const orderQuery = query(collection(db, "orders"), orderBy("date", "asc"), where("date", ">", threshold30Day))
+const totalsQuery = query(collection(db, "stats"));
 
 onSnapshot(orderQuery, (records) => {
-    for (let i = 0; i < records.docs.length; i++) {
-        addOrderToDashboard(records.docs[i].data());
+    for (let i = 0; i < records.docChanges().length; i++) {
+        if (records.docChanges()[i].type === "added") {
+            addOrderToDashboard(records.docChanges()[i].doc.data());
+        }
     }
-    orderQuery = orderQuery;
+    threshold30Day = dayjs().subtract(30, "days").format("YYYY-MM-DD");
 });
 
 onSnapshot(totalsQuery, () => {

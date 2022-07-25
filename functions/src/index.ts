@@ -52,6 +52,13 @@ export const updateOrder = functions.https.onRequest((request, response) => {
         });
       });
     });
+  // reinstate the order if it fails the first time
+  } else if (body.status == "processing") {
+    order.get().then((snap) => {
+      snap.forEach((doc) => {
+        db.collection("orders").add(doc.data());
+      });
+    });
   }
   response.status(200).send("");
 });

@@ -15,6 +15,13 @@ export const delay = (ms: number, returnValue?: any): Promise<boolean> =>
 admin.initializeApp();
 const db = admin.firestore();
 
+interface StatsDoc {
+  all?: number,
+  data30Day?: number,
+  data7Day?: number,
+  product30Day?: string
+}
+
 export const newOrder = functions.https.onRequest((request, response) => {
   const body: WebhookRequestBody = request.body;
   const data = {
@@ -30,74 +37,51 @@ export const newOrder = functions.https.onRequest((request, response) => {
     items: body.line_items,
   };
   db.collection("orders").add(data);
+
+  // get the current order total
+  const orderTotal = parseFloat(body.total);
+
+  addOrderTotal(orderTotal);
+
   response.status(200).send("");
 });
 
 export const updateOrder = functions.https.onRequest((request, response) => {
   const body: WebhookRequestBody = request.body;
-  // Delete the order from the database if it gets refunded or if it fails
+  functions.logger.log(body);
+  // Update the order status if it gets updated
   const order = db.collection("orders").where("orderId", "==", body.id);
-  if (body.status == "refunded" || body.status == "failed") {
-    order.get().then((snap) => {
-      snap.forEach((doc) => {
-        db.collection("orders").doc(doc.id).delete();
+  const orderTotal = parseFloat(body.total);
+  order.get().then((snap) => {
+    snap.forEach((doc) => {
+      if (doc.data().status === "failed" &&
+      (body.status === "processing" || body.status === "completed")) {
+        addOrderTotal(orderTotal);
+      } else if ((doc.data().status === "processing" ||
+      doc.data().status === "completed") &&
+      (body.status === "failed" || body.status === "refunded")) {
+        addOrderTotal(-orderTotal);
+      }
+      db.collection("orders").doc(doc.id).update({
+        status: body.status,
       });
     });
-  // update the status of an order if it goes from processing to completed
-  } else if (body.status == "completed") {
-    order.get().then((snap) => {
-      snap.forEach((doc) => {
-        db.collection("orders").doc(doc.id).update({
-          "status": body.status,
-        });
-      });
-    });
-  // reinstate the order if it fails the first time
-  } else if (body.status == "processing") {
-    order.get().then((snap) => {
-      snap.forEach((doc) => {
-        db.collection("orders").add(doc.data());
-      });
-    });
-  }
+  });
   response.status(200).send("");
 });
 
-interface StatsDoc {
-  all?: number,
-  data30Day?: number,
-  data7Day?: number,
-  product30Day?: string
-}
-
-export const calculateTotals = functions.firestore.document("/orders/{orderId}")
-    .onCreate((snapshot, context) => {
-      const orderData = snapshot.data() as WebhookRequestBody;
-
-      const process = async () => {
-        // get the current sales stats
-        const statsDoc = (await db.collection("stats").doc("totals").get())
-            .data() as StatsDoc;
-
-        // get the current order total
-        const orderTotal = parseFloat(orderData.total);
-
-        // update sales totals based on current order total
-        const all = (statsDoc.all || 0) + orderTotal;
-        const data30DaySum = (statsDoc.data30Day || 0) + orderTotal;
-        const data7DaySum = (statsDoc.data7Day || 0) + orderTotal;
-
-        // update stats in database
-        db.collection("stats").doc("totals").set({
-          all,
-          data30Day: data30DaySum,
-          data7Day: data7DaySum,
-          product30Day: statsDoc.product30Day,
-        });
-      };
-      process();
-      return null;
+export const deleteOrder = functions.https.onRequest((request, response) => {
+  if (Object.keys(request.body).includes("webhook_id")) return;
+  const orderId = request.body.id;
+  // Delete the order if it gets trashed
+  const order = db.collection("orders").where("orderId", "==", orderId);
+  order.get().then((snap) => {
+    snap.forEach((doc) => {
+      db.collection("orders").doc(doc.id).delete();
     });
+  });
+  response.status(200).send("");
+});
 
 export const updateTotals = functions.pubsub.schedule("0 0 * * *")
     .timeZone("America/Phoenix").onRun((context) => {
@@ -115,14 +99,16 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
 
         // Get the amount of sales from the last 30 days
         const query30Day = await db.collection("orders")
-            .orderBy("date", "desc").where("date", ">", threshold30Day).get();
+            .orderBy("date", "desc").where("date", ">", threshold30Day)
+            .where("status", "==", "completed").get();
         const docs30Day = await (query30Day).docs.map((i) => i.data());
         const data30DaySum =
             docs30Day.reduce((out, doc) => out + parseFloat(doc.total), 0);
 
         // Get the amount of sales from the last 7 days
         const query7Day = await db.collection("orders")
-            .orderBy("date", "desc").where("date", ">", threshold7Day).get();
+            .orderBy("date", "desc").where("date", ">", threshold7Day)
+            .where("status", "==", "completed").get();
         const docs7Day = await (query7Day).docs.map((i) => i.data());
         const data7DaySum =
             docs7Day.reduce((out, doc) => out + parseFloat(doc.total), 0);
@@ -150,8 +136,21 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
       return null;
     });
 
+// export const deleteOrders = functions.https.onRequest((request, response) =>{
+//   const orders = db.collection("orders").where("date", ">", "2022-07-26T06");
+//   orders.get().then((snap) => {
+//     snap.forEach((doc) => {
+//       db.collection("orders").doc(doc.id).delete();
+//     });
+//   });
+// });
+
 // Get total sales
 // export const getSales = functions.https.onRequest((req, res) => {
+//   const threshold30Day =
+//   dayjs().subtract(30, "days").format("YYYY-MM-DD");
+//   const threshold7Day =
+//   dayjs().subtract(7, "days").format("YYYY-MM-DD");
 //   const h = new fetch.Headers();
 //   const key = "ck_7a4ef3dfb8ede54346f840e10afcbcbdcf08e1d9";
 //   const secret = "cs_88e06874eec5d48b8a76acc986b312a2a36a0e08";
@@ -164,6 +163,9 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
 //     const pageCount = 3;
 //     const cumulativeStats = {
 //       salesTotal: 0,
+//       sales30: 0,
+//       sales7: 0,
+//       product: "",
 //     };
 
 //     for (let i = 1; i < pageCount; i++) {
@@ -174,12 +176,29 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
 //       // push response values that you want to cumulativeStats
 //       const orderList = await response.json();
 //       let salesTotal = 0;
+//       let sales30 = 0;
+//       let sales7 = 0;
+//       const products:string[] = [];
 //       const orders = JSON.parse(JSON.stringify(orderList));
 //       for (let j = 0; j < orders.length; j++) {
 //         salesTotal += parseFloat(orders[j].total);
+//         if (orders[j].date_created > threshold30Day) {
+//           sales30 += parseFloat(orders[j].total);
+//           for (let k = 0; k < orders[j].line_items.length; k++) {
+//             for (let l = 0; l < orders[j].line_items[k].quantity; l++) {
+//               products.push(orders[j].line_items[k].name);
+//             }
+//           }
+//         }
+//         if (orders[j].date_created > threshold7Day) {
+//           sales7 += parseFloat(orders[j].total);
+//         }
 //       }
-//       functions.logger.log(salesTotal);
 //       cumulativeStats.salesTotal += salesTotal;
+//       cumulativeStats.sales30 += sales30;
+//       cumulativeStats.sales7 += sales7;
+//       cumulativeStats.product =
+//       String(mostFrequent(products, products.length));
 
 //       await delay(intervalMs);
 //     }
@@ -188,10 +207,38 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
 //     // here: write to database
 //     db.collection("stats").doc("totals").set({
 //       all: cumulativeStats.salesTotal,
+//       data30Day: cumulativeStats.sales30,
+//       data7Day: cumulativeStats.sales7,
+//       product30Day: cumulativeStats.product,
 //     });
 //   };
 //   process2();
 // });
+
+/**
+ * Update the stats doc with the new incoming order total
+ * @param {number} orderTotal the incoming order total to add to the stats doc
+ */
+function addOrderTotal(orderTotal: number) {
+  const process = async () => {
+    const statsDoc = (await db.collection("stats").doc("totals").get())
+        .data() as StatsDoc;
+
+    // update sales totals based on current order total
+    const all = (statsDoc.all || 0) + orderTotal;
+    const data30DaySum = (statsDoc.data30Day || 0) + orderTotal;
+    const data7DaySum = (statsDoc.data7Day || 0) + orderTotal;
+
+    // update stats in database
+    db.collection("stats").doc("totals").set({
+      all,
+      data30Day: data30DaySum,
+      data7Day: data7DaySum,
+      product30Day: statsDoc.product30Day,
+    });
+  };
+  process();
+}
 
 /**
  * Find the most frequent element in an array

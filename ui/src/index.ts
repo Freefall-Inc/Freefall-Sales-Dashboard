@@ -61,6 +61,20 @@ onSnapshot(orderQuery, (records) => {
         if (records.docChanges()[i].type === "added") {
             addOrderToDashboard(records.docChanges()[i].doc.data());
         }
+        else if (records.docChanges()[i].type === "modified" &&
+        (records.docChanges()[i].doc.data().status === "refunded" ||
+        records.docChanges()[i].doc.data().status === "failed")) {
+            const id = records.docChanges()[i].doc.data().orderId;
+            document.getElementById(id.toString())?.remove();
+        }
+        else if (records.docChanges()[i].type === "modified" &&
+        records.docChanges()[i].doc.data().status === "processing") {
+            addOrderToDashboard(records.docChanges()[i].doc.data());
+        }
+        else if (records.docChanges()[i].type === "removed") {
+            const id = records.docChanges()[i].doc.data().orderId;
+            document.getElementById(id.toString())?.remove();
+        }
     }
     threshold30Day = dayjs().subtract(30, "days").format("YYYY-MM-DD");
 });
@@ -73,6 +87,7 @@ function addOrderToDashboard(recordData) {
 
     const order = document.createElement("div");
     order.className = "order";
+    order.id = recordData.orderId.toString();
     const orderDetails = document.createElement("div");
     orderDetails.className = "orderDetails";
     const orderItems = document.createElement("div");

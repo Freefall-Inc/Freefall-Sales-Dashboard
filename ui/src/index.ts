@@ -58,7 +58,9 @@ const totalsQuery = query(collection(db, "stats"));
 
 onSnapshot(orderQuery, (records) => {
     for (let i = 0; i < records.docChanges().length; i++) {
-        if (records.docChanges()[i].type === "added") {
+        if (records.docChanges()[i].type === "added" &&
+        records.docChanges()[i].doc.data().status != "failed" &&
+        records.docChanges()[i].doc.data().status != "refunded") {
             addOrderToDashboard(records.docChanges()[i].doc.data());
         }
         else if (records.docChanges()[i].type === "modified" &&

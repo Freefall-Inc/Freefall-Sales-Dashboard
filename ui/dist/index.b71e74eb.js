@@ -585,7 +585,7 @@ const orderQuery = (0, _firestore.query)((0, _firestore.collection)(db, "orders"
 const totalsQuery = (0, _firestore.query)((0, _firestore.collection)(db, "stats"));
 (0, _firestore.onSnapshot)(orderQuery, (records)=>{
     for(let i = 0; i < records.docChanges().length; i++){
-        if (records.docChanges()[i].type === "added") addOrderToDashboard(records.docChanges()[i].doc.data());
+        if (records.docChanges()[i].type === "added" && records.docChanges()[i].doc.data().status != "failed" && records.docChanges()[i].doc.data().status != "refunded") addOrderToDashboard(records.docChanges()[i].doc.data());
         else if (records.docChanges()[i].type === "modified" && (records.docChanges()[i].doc.data().status === "refunded" || records.docChanges()[i].doc.data().status === "failed")) {
             const id = records.docChanges()[i].doc.data().orderId;
             document.getElementById(id.toString())?.remove();

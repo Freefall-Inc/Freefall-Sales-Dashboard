@@ -137,74 +137,74 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
 // });
 
 // Get total sales
-export const getSales = functions.https.onRequest((req, res) => {
-  const threshold30Day =
-  dayjs().subtract(30, "days").format("YYYY-MM-DD");
-  const threshold7Day =
-  dayjs().subtract(7, "days").format("YYYY-MM-DD");
-  const h = new fetch.Headers();
-  const key = "ck_7a4ef3dfb8ede54346f840e10afcbcbdcf08e1d9";
-  const secret = "cs_88e06874eec5d48b8a76acc986b312a2a36a0e08";
-  const full = key + ":" + secret;
-  h.set("Authorization", "Basic " +
-  Buffer.from(full).toString("base64"));
+// export const getSales = functions.https.onRequest((req, res) => {
+//   const threshold30Day =
+//   dayjs().subtract(30, "days").format("YYYY-MM-DD");
+//   const threshold7Day =
+//   dayjs().subtract(7, "days").format("YYYY-MM-DD");
+//   const h = new fetch.Headers();
+//   const key = "ck_7a4ef3dfb8ede54346f840e10afcbcbdcf08e1d9";
+//   const secret = "cs_88e06874eec5d48b8a76acc986b312a2a36a0e08";
+//   const full = key + ":" + secret;
+//   h.set("Authorization", "Basic " +
+//   Buffer.from(full).toString("base64"));
 
-  const process2 = async () => {
-    const intervalMs = 2000;
-    const pageCount = 3;
-    const cumulativeStats = {
-      salesTotal: 0,
-      sales30: 0,
-      sales7: 0,
-      product: "",
-    };
+//   const process2 = async () => {
+//     const intervalMs = 2000;
+//     const pageCount = 3;
+//     const cumulativeStats = {
+//       salesTotal: 0,
+//       sales30: 0,
+//       sales7: 0,
+//       product: "",
+//     };
 
-    for (let i = 1; i < pageCount; i++) {
-      const response = await fetch(
-          "https://ffdrc.com/wp-json/wc/v3/orders?per_page=100&status=completed&page="+i,
-          {method: "GET", headers: h});
+//     for (let i = 1; i < pageCount; i++) {
+//       const response = await fetch(
+//           "https://ffdrc.com/wp-json/wc/v3/orders?per_page=100&status=completed&page="+i,
+//           {method: "GET", headers: h});
 
-      // push response values that you want to cumulativeStats
-      const orderList = await response.json();
-      let salesTotal = 0;
-      let sales30 = 0;
-      let sales7 = 0;
-      const products:string[] = [];
-      const orders = JSON.parse(JSON.stringify(orderList));
-      for (let j = 0; j < orders.length; j++) {
-        salesTotal += parseFloat(orders[j].total);
-        if (orders[j].date_created > threshold30Day) {
-          sales30 += parseFloat(orders[j].total);
-          for (let k = 0; k < orders[j].line_items.length; k++) {
-            for (let l = 0; l < orders[j].line_items[k].quantity; l++) {
-              products.push(orders[j].line_items[k].name);
-            }
-          }
-        }
-        if (orders[j].date_created > threshold7Day) {
-          sales7 += parseFloat(orders[j].total);
-        }
-      }
-      cumulativeStats.salesTotal += salesTotal;
-      cumulativeStats.sales30 += sales30;
-      cumulativeStats.sales7 += sales7;
-      cumulativeStats.product =
-      String(mostFrequent(products, products.length));
+//       // push response values that you want to cumulativeStats
+//       const orderList = await response.json();
+//       let salesTotal = 0;
+//       let sales30 = 0;
+//       let sales7 = 0;
+//       const products:string[] = [];
+//       const orders = JSON.parse(JSON.stringify(orderList));
+//       for (let j = 0; j < orders.length; j++) {
+//         salesTotal += parseFloat(orders[j].total);
+//         if (orders[j].date_created > threshold30Day) {
+//           sales30 += parseFloat(orders[j].total);
+//           for (let k = 0; k < orders[j].line_items.length; k++) {
+//             for (let l = 0; l < orders[j].line_items[k].quantity; l++) {
+//               products.push(orders[j].line_items[k].name);
+//             }
+//           }
+//         }
+//         if (orders[j].date_created > threshold7Day) {
+//           sales7 += parseFloat(orders[j].total);
+//         }
+//       }
+//       cumulativeStats.salesTotal += salesTotal;
+//       cumulativeStats.sales30 += sales30;
+//       cumulativeStats.sales7 += sales7;
+//       cumulativeStats.product =
+//       String(mostFrequent(products, products.length));
 
-      await delay(intervalMs);
-    }
+//       await delay(intervalMs);
+//     }
 
-    // calculate and process data
-    // here: write to database
-    db.collection("stats").doc("totals").set({
-      all: cumulativeStats.salesTotal,
-      data30Day: cumulativeStats.sales30,
-      data7Day: cumulativeStats.sales7,
-      product30Day: cumulativeStats.product,
-    });
-  };
-  process2();
-});
+//     // calculate and process data
+//     // here: write to database
+//     db.collection("stats").doc("totals").set({
+//       all: cumulativeStats.salesTotal,
+//       data30Day: cumulativeStats.sales30,
+//       data7Day: cumulativeStats.sales7,
+//       product30Day: cumulativeStats.product,
+//     });
+//   };
+//   process2();
+// });
 
 /**
  * Update the stats doc with the new incoming order total

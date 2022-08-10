@@ -2,7 +2,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import {WebhookRequestBody} from "../interfaces";
 import dayjs from "dayjs";
-import fetch from "node-fetch";
+// import fetch from "node-fetch";
 
 // Start writing Firebase Functions
 // https://firebase.google.com/docs/functions/typescript
@@ -48,7 +48,7 @@ export const updateOrder = functions.https.onRequest((request, response) => {
   const orderTotal = parseFloat(body.total);
   if (body.status === "processing") {
     addOrderTotal(orderTotal);
-  } else if (body.status === "refunded" || body.status === "failed") {
+  } else if (body.status === "refunded") {
     addOrderTotal(-orderTotal);
   }
   order.get().then((snap) => {
@@ -91,7 +91,7 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
         // Get the amount of sales from the last 30 days
         const query30Day = await db.collection("orders")
             .orderBy("date", "desc").where("date", ">", threshold30Day)
-            .where("status", "==", "completed").get();
+            .where("status", "in", ["processing", "completed"]).get();
         const docs30Day = await (query30Day).docs.map((i) => i.data());
         const data30DaySum =
             docs30Day.reduce((out, doc) => out + parseFloat(doc.total), 0);
@@ -99,7 +99,7 @@ export const updateTotals = functions.pubsub.schedule("0 0 * * *")
         // Get the amount of sales from the last 7 days
         const query7Day = await db.collection("orders")
             .orderBy("date", "desc").where("date", ">", threshold7Day)
-            .where("status", "==", "completed").get();
+            .where("status", "in", ["processing", "completed"]).get();
         const docs7Day = await (query7Day).docs.map((i) => i.data());
         const data7DaySum =
             docs7Day.reduce((out, doc) => out + parseFloat(doc.total), 0);

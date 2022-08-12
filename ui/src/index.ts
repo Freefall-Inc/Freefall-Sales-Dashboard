@@ -60,7 +60,8 @@ onSnapshot(orderQuery, (records) => {
     for (let i = 0; i < records.docChanges().length; i++) {
         if (records.docChanges()[i].type === "added" &&
         records.docChanges()[i].doc.data().status != "failed" &&
-        records.docChanges()[i].doc.data().status != "refunded") {
+        records.docChanges()[i].doc.data().status != "refunded" &&
+        records.docChanges()[i].doc.data().status != "on-hold") {
             addOrderToDashboard(records.docChanges()[i].doc.data());
         }
         else if (records.docChanges()[i].type === "modified" &&

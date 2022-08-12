@@ -542,6 +542,7 @@ var _firebaseuiCss = require("firebaseui/dist/firebaseui.css");
 var _dayjs = require("dayjs");
 var _firestore = require("firebase/firestore");
 var _dayjsDefault = parcelHelpers.interopDefault(_dayjs);
+const mp3 = require("url:./yousuffer.mp3");
 const WooCommerce = new (0, _woocommerceRestApiDefault.default)({
     url: "https://ffdrc.com/",
     consumerKey: "ck_7a4ef3dfb8ede54346f840e10afcbcbdcf08e1d9",
@@ -583,10 +584,17 @@ let threshold30Day = (0, _dayjsDefault.default)().subtract(30, "days").format("Y
 const orders = document.getElementsByClassName("orders")[0];
 const orderQuery = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "asc"), (0, _firestore.where)("date", ">", threshold30Day));
 const totalsQuery = (0, _firestore.query)((0, _firestore.collection)(db, "stats"));
+let readyToPlaySound = false;
+const sound = new Audio(mp3);
+window.setTimeout(()=>{
+    readyToPlaySound = true;
+}, 5000);
 (0, _firestore.onSnapshot)(orderQuery, (records)=>{
     for(let i = 0; i < records.docChanges().length; i++){
-        if (records.docChanges()[i].type === "added" && records.docChanges()[i].doc.data().status != "failed" && records.docChanges()[i].doc.data().status != "refunded") addOrderToDashboard(records.docChanges()[i].doc.data());
-        else if (records.docChanges()[i].type === "modified" && (records.docChanges()[i].doc.data().status === "refunded" || records.docChanges()[i].doc.data().status === "failed")) {
+        if (records.docChanges()[i].type === "added" && records.docChanges()[i].doc.data().status != "failed" && records.docChanges()[i].doc.data().status != "refunded" && records.docChanges()[i].doc.data().status != "on-hold") {
+            addOrderToDashboard(records.docChanges()[i].doc.data());
+            if (readyToPlaySound) sound.play();
+        } else if (records.docChanges()[i].type === "modified" && (records.docChanges()[i].doc.data().status === "refunded" || records.docChanges()[i].doc.data().status === "failed")) {
             const id = records.docChanges()[i].doc.data().orderId;
             document.getElementById(id.toString())?.remove();
         } else if (records.docChanges()[i].type === "modified" && records.docChanges()[i].doc.data().status === "processing") addOrderToDashboard(records.docChanges()[i].doc.data());
@@ -642,7 +650,7 @@ function updateTotals() {
     });
 }
 
-},{"firebaseui":"1OWAk","firebase/compat/app":"2iVaZ","firebaseui/dist/firebaseui.css":"8C05G","dayjs":"NJZFB","firebase/firestore":"cJafS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@woocommerce/woocommerce-rest-api":"a800i"}],"1OWAk":[function(require,module,exports) {
+},{"firebaseui":"1OWAk","firebase/compat/app":"2iVaZ","firebaseui/dist/firebaseui.css":"8C05G","dayjs":"NJZFB","firebase/firestore":"cJafS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@woocommerce/woocommerce-rest-api":"a800i","url:./yousuffer.mp3":"1FxTf"}],"1OWAk":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "auth", ()=>auth);
@@ -52039,8 +52047,8 @@ function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 "use strict";
-var global = arguments[3];
 var process = require("process");
+var global = arguments[3];
 module.exports = Readable;
 /*<replacement>*/ var Duplex;
 /*</replacement>*/ Readable.ReadableState = ReadableState;
@@ -53439,8 +53447,8 @@ Object.defineProperty(Duplex.prototype, "destroyed", {
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
 // the drain event emission and buffering.
 "use strict";
-var process = require("process");
 var global = arguments[3];
+var process = require("process");
 module.exports = Writable;
 /* <replacement> */ function WriteReq(chunk, encoding, cb) {
     this.chunk = chunk;
@@ -55100,8 +55108,8 @@ exports.pipeline = require("./lib/internal/streams/pipeline.js");
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 "use strict";
-var global = arguments[3];
 var process = require("process");
+var global = arguments[3];
 module.exports = Readable;
 /*<replacement>*/ var Duplex;
 /*</replacement>*/ Readable.ReadableState = ReadableState;
@@ -56497,8 +56505,8 @@ Object.defineProperty(Duplex.prototype, "destroyed", {
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
 // the drain event emission and buffering.
 "use strict";
-var process = require("process");
 var global = arguments[3];
+var process = require("process");
 module.exports = Writable;
 /* <replacement> */ function WriteReq(chunk, encoding, cb) {
     this.chunk = chunk;
@@ -59622,6 +59630,43 @@ var has = Object.prototype.hasOwnProperty, undef;
 //
 exports.stringify = querystringify;
 exports.parse = querystring;
+
+},{}],"1FxTf":[function(require,module,exports) {
+module.exports = require("./helpers/bundle-url").getBundleURL("7UhFu") + "yousuffer.d5e70a4e.mp3" + "?" + Date.now();
+
+},{"./helpers/bundle-url":"lgJ39"}],"lgJ39":[function(require,module,exports) {
+"use strict";
+var bundleURL = {};
+function getBundleURLCached(id) {
+    var value = bundleURL[id];
+    if (!value) {
+        value = getBundleURL();
+        bundleURL[id] = value;
+    }
+    return value;
+}
+function getBundleURL() {
+    try {
+        throw new Error();
+    } catch (err) {
+        var matches = ("" + err.stack).match(/(https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/[^)\n]+/g);
+        if (matches) // The first two stack frames will be this function and getBundleURLCached.
+        // Use the 3rd one, which will be a runtime in the original bundle.
+        return getBaseURL(matches[2]);
+    }
+    return "/";
+}
+function getBaseURL(url) {
+    return ("" + url).replace(/^((?:https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/.+)\/[^/]+$/, "$1") + "/";
+} // TODO: Replace uses with `new URL(url).origin` when ie11 is no longer supported.
+function getOrigin(url) {
+    var matches = ("" + url).match(/(https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/[^/]+/);
+    if (!matches) throw new Error("Origin not found");
+    return matches[0];
+}
+exports.getBundleURL = getBundleURLCached;
+exports.getBaseURL = getBaseURL;
+exports.getOrigin = getOrigin;
 
 },{}]},["iJYvl","h7u1C"], "h7u1C", "parcelRequire3f31")
 

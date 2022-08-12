@@ -584,16 +584,12 @@ let threshold30Day = (0, _dayjsDefault.default)().subtract(30, "days").format("Y
 const orders = document.getElementsByClassName("orders")[0];
 const orderQuery = (0, _firestore.query)((0, _firestore.collection)(db, "orders"), (0, _firestore.orderBy)("date", "asc"), (0, _firestore.where)("date", ">", threshold30Day));
 const totalsQuery = (0, _firestore.query)((0, _firestore.collection)(db, "stats"));
-let readyToPlaySound = false;
 const sound = new Audio(mp3);
-window.setTimeout(()=>{
-    readyToPlaySound = true;
-}, 5000);
 (0, _firestore.onSnapshot)(orderQuery, (records)=>{
     for(let i = 0; i < records.docChanges().length; i++){
         if (records.docChanges()[i].type === "added" && records.docChanges()[i].doc.data().status != "failed" && records.docChanges()[i].doc.data().status != "refunded" && records.docChanges()[i].doc.data().status != "on-hold") {
             addOrderToDashboard(records.docChanges()[i].doc.data());
-            if (readyToPlaySound) sound.play();
+            sound.play();
         } else if (records.docChanges()[i].type === "modified" && (records.docChanges()[i].doc.data().status === "refunded" || records.docChanges()[i].doc.data().status === "failed")) {
             const id = records.docChanges()[i].doc.data().orderId;
             document.getElementById(id.toString())?.remove();

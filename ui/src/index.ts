@@ -57,13 +57,7 @@ const orders = document.getElementsByClassName("orders")[0];
 const orderQuery = query(collection(db, "orders"), orderBy("date", "asc"), where("date", ">", threshold30Day))
 const totalsQuery = query(collection(db, "stats"));
 
-let readyToPlaySound = false;
-
 const sound = new Audio(mp3);
-
-window.setTimeout(() => {
-    readyToPlaySound = true
-}, 5000)
 
 onSnapshot(orderQuery, (records) => {
     for (let i = 0; i < records.docChanges().length; i++) {
@@ -72,7 +66,7 @@ onSnapshot(orderQuery, (records) => {
         records.docChanges()[i].doc.data().status != "refunded" &&
         records.docChanges()[i].doc.data().status != "on-hold") {
             addOrderToDashboard(records.docChanges()[i].doc.data());
-            if (readyToPlaySound) sound.play();
+            sound.play();
         }
         else if (records.docChanges()[i].type === "modified" &&
         (records.docChanges()[i].doc.data().status === "refunded" ||
